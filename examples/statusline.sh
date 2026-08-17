@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Claude Code compatible statusline command.
-# grok-sl pipes session JSON to stdin (same idea as Claude's statusLine.command).
+# grok-statusline pipes session JSON to stdin (same idea as Claude's statusLine.command).
 # Do not use a heredoc here — stdin must stay as the JSON payload.
 set -euo pipefail
 exec python3 -c '

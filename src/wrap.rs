@@ -59,7 +59,10 @@ fn paint(lines: &[String], rows: u16, height: u16) {
     let start = rows.saturating_sub(height).saturating_add(1).max(1);
     let mut out = String::from("\x1b7");
     for (i, line) in lines.iter().take(height as usize).enumerate() {
-        out.push_str(&format!("\x1b[{};1H\x1b[0m\x1b[2K{line}", start as usize + i));
+        out.push_str(&format!(
+            "\x1b[{};1H\x1b[0m\x1b[2K{line}",
+            start as usize + i
+        ));
     }
     for i in lines.len()..(height as usize) {
         out.push_str(&format!("\x1b[{};1H\x1b[0m\x1b[2K", start as usize + i));
@@ -202,6 +205,7 @@ fn libc_exit(code: i32) -> ! {
     unsafe { libc::_exit(code) }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn parent_loop(
     master: OwnedFd,
     child: Pid,
@@ -223,7 +227,7 @@ fn parent_loop(
     };
     let mut raw = orig.clone();
     cfmakeraw(&mut raw);
-    let _ = tcsetattr(&io::stdin(), SetArg::TCSANOW, &raw);
+    let _ = tcsetattr(io::stdin(), SetArg::TCSANOW, &raw);
 
     let handler = nix::sys::signal::SigHandler::Handler(on_winch);
     let _ = unsafe { nix::sys::signal::signal(Signal::SIGWINCH, handler) };
@@ -312,7 +316,7 @@ fn parent_loop(
     };
 
     stop.store(true, Ordering::Relaxed);
-    let _ = tcsetattr(&io::stdin(), SetArg::TCSANOW, &orig);
+    let _ = tcsetattr(io::stdin(), SetArg::TCSANOW, &orig);
     let _ = io::stdout().write_all(RESET.as_bytes());
     let _ = io::stdout().flush();
     result

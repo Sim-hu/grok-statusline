@@ -96,7 +96,13 @@ fn probe(cwd: &Path, untracked: bool) -> GitInfo {
         parse_xy(&mut info, line);
     }
     if let Ok(rem) = Command::new("git")
-        .args(["-C", cwd.to_str().unwrap_or("."), "remote", "get-url", "origin"])
+        .args([
+            "-C",
+            cwd.to_str().unwrap_or("."),
+            "remote",
+            "get-url",
+            "origin",
+        ])
         .env("GIT_OPTIONAL_LOCKS", "0")
         .output()
     {
@@ -164,4 +170,42 @@ pub fn parse_origin(url: &str) -> Option<RepoId> {
         owner: parts[parts.len() - 2].to_string(),
         name: parts[parts.len() - 1].to_string(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn origin_https() {
+        let r = parse_origin("https://github.com/Sim-hu/grok-statusline.git").unwrap();
+        assert_eq!(r.host, "github.com");
+        assert_eq!(r.owner, "Sim-hu");
+        assert_eq!(r.name, "grok-statusline");
+    }
+
+    #[test]
+    fn origin_ssh() {
+        let r = parse_origin("git@github.com:Sim-hu/grok-statusline.git").unwrap();
+        assert_eq!(r.owner, "Sim-hu");
+        assert_eq!(r.name, "grok-statusline");
+    }
+
+    #[test]
+    fn origin_empty() {
+        assert!(parse_origin("").is_none());
+        assert!(parse_origin("not-a-url").is_none());
+    }
+
+    #[test]
+    fn ahead_behind() {
+        assert_eq!(
+            capture_after("main...origin/main [ahead 2]", "ahead "),
+            Some(2)
+        );
+        assert_eq!(
+            capture_after("main...origin/main [ahead 2, behind 3]", "behind "),
+            Some(3)
+        );
+    }
 }

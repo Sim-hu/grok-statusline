@@ -260,3 +260,31 @@ pub fn uninstall() -> Result<(), String> {
     println!("removed PATH hooks; `grok` is the official binary again");
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_keeps_surrounding() {
+        let src = "export PATH=/usr/bin\n# >>> grok-statusline >>>\nold\n# <<< grok-statusline <<<\n# done\n";
+        assert_eq!(strip_block(src), "export PATH=/usr/bin\n# done\n");
+    }
+
+    #[test]
+    fn strip_noop() {
+        assert_eq!(strip_block("hello\n"), "hello\n");
+    }
+
+    #[test]
+    fn is_shim_detects_marker() {
+        let dir = std::env::temp_dir().join(format!("gsl-shim-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("grok");
+        fs::write(&p, shim_script()).unwrap();
+        assert!(is_shim(&p));
+        fs::write(&p, "#!/bin/sh\nexec /opt/fivem/.grok/bin/grok-upstream\n").unwrap();
+        assert!(!is_shim(&p));
+        let _ = fs::remove_dir_all(&dir);
+    }
+}

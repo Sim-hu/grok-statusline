@@ -114,7 +114,13 @@ pub fn pick_session_dir(home: &Path, cwd: &Path) -> Option<PathBuf> {
                     continue;
                 }
             }
-            let encoded = encode_cwd(entry.get("cwd").and_then(|v| v.as_str()).map(Path::new).unwrap_or(cwd));
+            let encoded = encode_cwd(
+                entry
+                    .get("cwd")
+                    .and_then(|v| v.as_str())
+                    .map(Path::new)
+                    .unwrap_or(cwd),
+            );
             let mut dir = home.join("sessions").join(encoded).join(sid);
             if !dir.is_dir() {
                 match find_session(home, sid) {
@@ -421,7 +427,11 @@ pub fn fetch_usage(home: &Path) -> Option<Usage> {
     let cache_path = home.join("grok-statusline").join("billing-cache.json");
     if let Ok(text) = fs::read_to_string(&cache_path) {
         if let Ok(cached) = serde_json::from_str::<Value>(&text) {
-            let age = now_secs() - cached.get("fetched_at").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let age = now_secs()
+                - cached
+                    .get("fetched_at")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0);
             if (0.0..60.0).contains(&age) {
                 if let Some(u) = usage_from_value(cached.get("data")) {
                     return Some(u);
@@ -476,14 +486,13 @@ pub fn fetch_usage(home: &Path) -> Option<Usage> {
         }
     }
 
-    if data.get("percent").is_none() {
-        return None;
-    }
+    data.get("percent")?;
 
     let _ = fs::create_dir_all(cache_path.parent().unwrap());
     let _ = fs::write(
         &cache_path,
-        serde_json::to_string_pretty(&json!({ "fetched_at": now_secs(), "data": data })).unwrap_or_default()
+        serde_json::to_string_pretty(&json!({ "fetched_at": now_secs(), "data": data }))
+            .unwrap_or_default()
             + "\n",
     );
     usage_from_value(Some(&data))
@@ -549,4 +558,32 @@ fn http_json(url: &str, token: &str) -> Option<Value> {
         return None;
     }
     serde_json::from_slice(&out.stdout).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn cwd_encoding() {
+        assert_eq!(
+            encode_cwd(Path::new("/opt/fivem/txData/Qbox/resources")),
+            "%2Fopt%2Ffivem%2FtxData%2FQbox%2Fresources"
+        );
+    }
+
+    #[test]
+    fn model_label() {
+        assert_eq!(display_model("grok-4.6"), "Grok 4.6");
+        assert_eq!(display_model("other"), "other");
+    }
+
+    #[test]
+    fn iso_epoch_round() {
+        let t = parse_iso("1970-01-01T00:00:00Z").unwrap();
+        assert!((t - 0.0).abs() < 1.0);
+        let t = parse_iso("1970-01-02T00:00:00+00:00").unwrap();
+        assert!((t - 86400.0).abs() < 1.0);
+    }
 }

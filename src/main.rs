@@ -98,7 +98,10 @@ fn cmd_once(dump_json: bool, flags: Flags) -> i32 {
     };
     let payload = build_payload(&home, &cwd, &cfg, usage.as_ref());
     if dump_json {
-        println!("{}", serde_json::to_string_pretty(&payload).unwrap_or_default());
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&payload).unwrap_or_default()
+        );
         return 0;
     }
     let cols = terminal_cols();

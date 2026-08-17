@@ -72,13 +72,12 @@ fn clip(s: &str, width: usize) -> String {
 pub fn pad_bar(inner: &str, cols: usize, padding: usize) -> String {
     let body = format!("{}{inner}", " ".repeat(padding));
     let used = vis_width(&body);
-    let body = if used > cols {
-        clip(&body, cols)
-    } else {
-        body
-    };
+    let body = if used > cols { clip(&body, cols) } else { body };
     let used = vis_width(&body);
-    format!("{BG}{FG}{body}{}{RESET}", " ".repeat(cols.saturating_sub(used)))
+    format!(
+        "{BG}{FG}{body}{}{RESET}",
+        " ".repeat(cols.saturating_sub(used))
+    )
 }
 
 pub fn fmt_tokens(n: u64) -> String {
@@ -257,10 +256,7 @@ pub fn render_builtin(payload: &Value, cols: usize, cfg: &Config) -> Vec<String>
     if cfg.height <= 1 {
         let mut compact = format!("{CYAN}[{model}]{FG}{DIM} │ {FG}{color}{bar} {pct:.0}%{FG}");
         if let Some(up) = use_pct {
-            compact.push_str(&format!(
-                "{DIM} │ {FG}{}use {up:.0}%{FG}",
-                pct_color(up)
-            ));
+            compact.push_str(&format!("{DIM} │ {FG}{}use {up:.0}%{FG}", pct_color(up)));
         }
         if !branch.is_empty() {
             compact.push_str(&format!("{DIM} │ {FG}{branch}"));
@@ -322,4 +318,41 @@ pub fn render_status(payload: &Value, cols: usize, cfg: &Config) -> Vec<String> 
         }
     }
     render_builtin(payload, cols, cfg)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tokens() {
+        assert_eq!(fmt_tokens(42), "42");
+        assert_eq!(fmt_tokens(1500), "1.5k");
+        assert_eq!(fmt_tokens(12_000), "12k");
+        assert_eq!(fmt_tokens(2_000_000), "2.0M");
+    }
+
+    #[test]
+    fn duration() {
+        assert_eq!(fmt_duration(9.0), "9s");
+        assert_eq!(fmt_duration(60.0), "1m");
+        assert_eq!(fmt_duration(75.0), "1m15s");
+        assert_eq!(fmt_duration(3661.0), "1h01m");
+    }
+
+    #[test]
+    fn width_ignores_ansi() {
+        assert_eq!(vis_width("hi"), 2);
+        assert_eq!(vis_width(&format!("{CYAN}hi{RESET}")), 2);
+    }
+
+    #[test]
+    fn bar_fills() {
+        assert_eq!(progress_bar(0.0, 10), "░░░░░░░░░░");
+        assert_eq!(progress_bar(100.0, 10), "██████████");
+        assert_eq!(
+            progress_bar(50.0, 10).chars().filter(|c| *c == '█').count(),
+            5
+        );
+    }
 }

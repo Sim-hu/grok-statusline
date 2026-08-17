@@ -1,8 +1,10 @@
 # grok-statusline
 
-Grok Build の画面下に、Claude Code と同じ常時バーを出す。Rust 製。
+[English](README.md) | [日本語](README.ja.md)
 
-Grok には `/statusline` も描画 hook も無い。インストールは公式の `~/.grok/bin/grok` を触らない。ラッパーを `~/.local/bin/grok` に置き、シェル設定の末尾でそこを PATH の手前にする。Grok の自動更新はそのまま公式バイナリを差し替えられ、次の `grok` 起動で新しい本体を包む。**alias は不要。**
+Claude-style status line at the bottom of [Grok Build](https://github.com/xai-org/grok). Written in Rust.
+
+Grok has no `/statusline` hook. Install leaves the official `~/.grok/bin/grok` alone, puts a wrapper at `~/.local/bin/grok`, and prepends that directory on `PATH` after the Grok installer block. Grok can update its own binary in place; the next `grok` launch wraps the new build. **No alias.**
 
 ```
 [Grok 4.6]  resources  main +2 ~1  high
@@ -11,9 +13,9 @@ Grok には `/statusline` も描画 hook も無い。インストールは公式
 
 ## Install
 
-### ソースから
+### From source
 
-Rust 1.74+。
+Rust 1.74+.
 
 ```bash
 git clone https://github.com/Sim-hu/grok-statusline.git
@@ -22,45 +24,48 @@ cargo install --path .
 grok-statusline install
 ```
 
-これで次から `grok` の下にバーが出る。
+Then launch `grok` as usual.
 
 ### Nix
 
 ```bash
-# flake
 nix profile install github:Sim-hu/grok-statusline
 grok-statusline install
 
-# その場だけ
 nix run github:Sim-hu/grok-statusline -- install
-
-# 開発シェル
 nix develop github:Sim-hu/grok-statusline
 ```
 
-`default.nix` もあるので flake なしでも `nix-build` できる。
+`default.nix` works with `nix-build` if you are not using flakes.
 
-外すとき:
+To remove:
 
 ```bash
 grok-statusline uninstall
 ```
 
-Grok 本体の自動更新でバーが消えることはない。公式バイナリは `~/.grok/bin/grok` のまま更新される。Grok のインストーラが PATH ブロックをファイル末尾に書き足した場合だけ、もう一度 `grok-statusline install`（ブロックを末尾に戻す）。
+Grok auto-updates do not drop the bar. The official binary stays at `~/.grok/bin/grok`. Re-run `grok-statusline install` only if Grok's installer appends another `PATH` block at the end of your shell rc (that moves our block back to the end).
+
+This shell still has the old `PATH` until you open a new terminal, or:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+hash -r
+```
 
 ## Usage
 
 ```bash
-grok                            # 普段どおり。バー付き
-grok-statusline once            # バーだけ表示
-grok-statusline dump-json       # スクリプト用 JSON
+grok                            # normal launch, with the bar
+grok-statusline once            # print the bar once
+grok-statusline dump-json       # session JSON for custom scripts
 grok-statusline once --no-usage
 grok-statusline once --height 1
 ```
 
 ## Config
 
-`~/.grok/grok-statusline.json`（プロジェクトなら `<cwd>/.grok/grok-statusline.json`）。
+`~/.grok/grok-statusline.json`, or `<cwd>/.grok/grok-statusline.json` for a project.
 
 ```json
 {
@@ -76,7 +81,7 @@ grok-statusline once --height 1
 }
 ```
 
-Claude と同じく自前コマンドにもできる:
+Same contract as Claude Code for a custom command:
 
 ```json
 {
@@ -87,23 +92,33 @@ Claude と同じく自前コマンドにもできる:
 }
 ```
 
-stdin に Claude 互換 JSON、stdout がバー。`COLUMNS` / `LINES` を渡す。200ms で失敗したら builtin。
+JSON on stdin, bar on stdout. `COLUMNS` / `LINES` are set. After 200ms or a non-zero exit, the builtin renderer is used.
 
 ## JSON
 
-`grok-statusline dump-json` で確認できる。
+See `grok-statusline dump-json`.
 
-| Field | 内容 |
+| Field | Meaning |
 |------|------|
 | `model.id` / `model.display_name` | `grok-4.6` / `Grok 4.6` |
 | `workspace.current_dir` | cwd |
-| `workspace.repo` | origin の host/owner/name |
-| `context_window.used_percentage` | ctx 使用率 |
-| `cost.total_duration_ms` | セッション経過 |
+| `workspace.repo` | origin host / owner / name |
+| `context_window.used_percentage` | context fill |
+| `cost.total_duration_ms` | session age |
 | `cost.total_lines_added` / `removed` | +/- |
-| `rate_limits.seven_day` | 週次クレジット |
-| `effort.level` | `high` など |
+| `rate_limits.seven_day` | weekly credits |
+| `effort.level` | e.g. `high` |
 | `git.*` | branch, staged, modified |
+
+## Development
+
+```bash
+cargo fmt --all
+cargo clippy --all-targets -- -D warnings
+cargo test --all-targets
+```
+
+CI on `main` and pull requests runs rustfmt, clippy, tests, a release build, and shellcheck.
 
 ## License
 
