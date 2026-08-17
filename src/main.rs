@@ -29,8 +29,8 @@ grok-statusline {VERSION} — Claude-style bottom statusline for Grok
 
 Usage:
   grok                         after install, this is enough
-  grok-statusline install      wrap ~/.grok/bin/grok (no alias)
-  grok-statusline uninstall    restore the original grok
+  grok-statusline install      put a wrapper on PATH; leave official grok alone
+  grok-statusline uninstall    remove the wrapper
   grok-statusline wrap [--] [grok args...]
   grok-statusline once [--no-usage] [--height N]
   grok-statusline dump-json [--no-usage]

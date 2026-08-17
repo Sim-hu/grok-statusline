@@ -2,7 +2,7 @@
 
 Grok Build の画面下に、Claude Code と同じ常時バーを出す。Rust 製。
 
-Grok には `/statusline` も描画 hook も無い。インストールすると `~/.grok/bin/grok` を薄い shim に差し替え、本物の grok を 1〜2 行短い PTY で起動して最終行にバーを描く。**alias は不要。今までどおり `grok` で起動する。**
+Grok には `/statusline` も描画 hook も無い。インストールは公式の `~/.grok/bin/grok` を触らない。ラッパーを `~/.local/bin/grok` に置き、シェル設定の末尾でそこを PATH の手前にする。Grok の自動更新はそのまま公式バイナリを差し替えられ、次の `grok` 起動で新しい本体を包む。**alias は不要。**
 
 ```
 [Grok 4.6]  resources  main +2 ~1  high
@@ -46,7 +46,7 @@ nix develop github:Sim-hu/grok-statusline
 grok-statusline uninstall
 ```
 
-Grok 本体の自動更新が `~/.grok/bin/grok` を上書きしたら、もう一度 `grok-statusline install`。
+Grok 本体の自動更新でバーが消えることはない。公式バイナリは `~/.grok/bin/grok` のまま更新される。Grok のインストーラが PATH ブロックをファイル末尾に書き足した場合だけ、もう一度 `grok-statusline install`（ブロックを末尾に戻す）。
 
 ## Usage
 
