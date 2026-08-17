@@ -1,0 +1,17 @@
+{
+  "statusLine": {
+    "type": "builtin",
+    "padding": 0,
+    "refreshInterval": 1,
+    "height": 2,
+    "barWidth": 10
+  },
+  "usage": {
+    "enabled": true
+  },
+  "git": {
+    "enabled": true,
+    "cacheSeconds": 5,
+    "untracked": false
+  }
+}
