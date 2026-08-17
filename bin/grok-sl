@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-# Launch grok with a Claude-style 1-line status bar on the last terminal row.
-set -euo pipefail
-root=$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)
-exec python3 "$root/grok_statusline.py" "$@"

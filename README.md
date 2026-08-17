@@ -1,44 +1,62 @@
 # grok-statusline
 
-Claude Code と同じく、Grok Build の**画面下**に常時バーを出す。
+Grok Build の画面下に、Claude Code と同じ常時バーを出す。Rust 製。
 
-Grok には `/statusline` も描画 hook も無い。`grok-sl` は `grok` を 1〜3 行短い PTY で起動し、空けた最終行にバーを描く。
-
-デフォルトは Claude 公式ドキュメントの multi-line 例と同じ構成:
+Grok には `/statusline` も描画 hook も無い。インストールすると `~/.grok/bin/grok` を薄い shim に差し替え、本物の grok を 1〜2 行短い PTY で起動して最終行にバーを描く。**alias は不要。今までどおり `grok` で起動する。**
 
 ```
 [Grok 4.6]  resources  main +2 ~1  high
 ████░░░░░░ 24% 124k/500k │ use 4% wk 6d │ 14m │ +709/-21
 ```
 
-カスタム時は Claude と同じ契約: **JSON を stdin に流し、stdout がバーになる**。
-
 ## Install
+
+### ソースから
+
+Rust 1.74+。
 
 ```bash
 git clone https://github.com/Sim-hu/grok-statusline.git
-ln -sfn "$PWD/grok-statusline/bin/grok-sl" ~/.local/bin/grok-sl
+cd grok-statusline
+cargo install --path .
+grok-statusline install
 ```
 
-Python 3.10+。外部パッケージは不要。`grok` が PATH にあること。
+これで次から `grok` の下にバーが出る。
+
+### Nix
+
+```bash
+# flake
+nix profile install github:Sim-hu/grok-statusline
+grok-statusline install
+
+# その場だけ
+nix run github:Sim-hu/grok-statusline -- install
+
+# 開発シェル
+nix develop github:Sim-hu/grok-statusline
+```
+
+`default.nix` もあるので flake なしでも `nix-build` できる。
+
+外すとき:
+
+```bash
+grok-statusline uninstall
+```
+
+Grok 本体の自動更新が `~/.grok/bin/grok` を上書きしたら、もう一度 `grok-statusline install`。
 
 ## Usage
 
 ```bash
-grok-sl                 # grok の代わりに起動
-grok-sl --once          # バーだけ表示
-grok-sl --dump-json     # スクリプト用 JSON を確認
-grok-sl --no-usage      # billing API を叩かない
-grok-sl --height 1      # 1 行に畳む
+grok                            # 普段どおり。バー付き
+grok-statusline once            # バーだけ表示
+grok-statusline dump-json       # スクリプト用 JSON
+grok-statusline once --no-usage
+grok-statusline once --height 1
 ```
-
-毎回 `grok` で出したい場合:
-
-```bash
-alias grok='grok-sl'
-```
-
-今開いているセッションの下には生えない。**次から `grok-sl` で起動したセッション**の下に出る。
 
 ## Config
 
@@ -64,41 +82,28 @@ Claude と同じく自前コマンドにもできる:
 {
   "statusLine": {
     "type": "command",
-    "command": "~/src/grok-statusline/examples/statusline.sh",
-    "padding": 0
+    "command": "~/src/grok-statusline/examples/statusline.sh"
   }
 }
 ```
 
-`COLUMNS` / `LINES` をセットしてからコマンドを実行する。タイムアウトは 200ms。失敗したら builtin に戻す。
+stdin に Claude 互換 JSON、stdout がバー。`COLUMNS` / `LINES` を渡す。200ms で失敗したら builtin。
 
-## JSON (Claude-compatible)
+## JSON
 
-`--dump-json` で中身を見られる。Claude Code の statusline stdin に寄せている。
+`grok-statusline dump-json` で確認できる。
 
 | Field | 内容 |
 |------|------|
 | `model.id` / `model.display_name` | `grok-4.6` / `Grok 4.6` |
 | `workspace.current_dir` | cwd |
-| `workspace.repo` | origin から host/owner/name |
+| `workspace.repo` | origin の host/owner/name |
 | `context_window.used_percentage` | ctx 使用率 |
-| `context_window.context_window_size` | ウィンドウ token |
-| `context_window.total_input_tokens` | 使用 token |
 | `cost.total_duration_ms` | セッション経過 |
-| `cost.total_lines_added` / `removed` | エージェントの +/- |
-| `rate_limits.seven_day.used_percentage` | 週次クレジット（無ければ monthly を five_hour に載せる） |
+| `cost.total_lines_added` / `removed` | +/- |
+| `rate_limits.seven_day` | 週次クレジット |
 | `effort.level` | `high` など |
-| `session_name` | 生成タイトル |
-| `git.*` | branch, staged, modified（Grok 拡張） |
-
-出典: `~/.grok/sessions/**/signals.json` と `summary.json`。billing は `GET /v1/billing`（60 秒キャッシュ）。
-
-## Performance
-
-- git は 5 秒キャッシュ。巨大 repo では untracked を数えない（`git.untracked`）
-- session JSON は mtime が変わるまで再読しない
-- billing はバックグラウンドスレッド
-- 描画は内容が変わったときだけ。子の再描画で消えた行はすぐ書き戻す
+| `git.*` | branch, staged, modified |
 
 ## License
 

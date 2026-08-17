@@ -1,0 +1,22 @@
+[package]
+name = "grok-statusline"
+version = "0.3.0"
+edition = "2021"
+rust-version = "1.74"
+license = "MIT"
+description = "Claude-style bottom statusline for Grok Build"
+repository = "https://github.com/Sim-hu/grok-statusline"
+readme = "README.md"
+keywords = ["grok", "statusline", "tui"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "grok-statusline"
+path = "src/main.rs"
+
+[dependencies]
+libc = "0.2"
+nix = { version = "0.29", features = ["fs", "poll", "process", "signal", "term"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+unicode-width = "0.2"
